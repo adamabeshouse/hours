@@ -36,8 +36,21 @@ $("#addJobSubmit").click(()=>{
 $("#resetTimers").click(()=>{
     const confirmed = confirm("Really reset all the timers to 0?");
     if (confirmed) {
-        for (const jobId of Object.keys(secondsWorked)) {
+        const jobIds = getJobIds();
+        for (const jobId of jobIds) {
             secondsWorked[jobId] = 0;
+        }
+        save();
+        render();
+    }
+});
+
+$("#deleteTimers").click(()=>{
+    const confirmed = confirm("Really delete all timers?");
+    if (confirmed) {
+        const jobIds = getJobIds();
+        for (const jobId of jobIds) {
+            deleteTimer(jobId, true);
         }
         save();
         render();
@@ -46,6 +59,17 @@ $("#resetTimers").click(()=>{
 
 function save() {
     localStorage.secondsWorked = JSON.stringify(secondsWorked);
+}
+function deleteTimer(jobId, force) {
+    const confirmed = force || confirm(`Are you sure you want to delete ${jobId}?`);
+    if (confirmed) {
+	delete secondsWorked[jobId];
+	if (activeJobId === jobId) {
+	    activeJobId = "";
+	}
+	save();
+	render();
+    }
 }
 function renderTime(seconds) {
     const hours = Math.floor(seconds / 3600);
@@ -56,11 +80,14 @@ function renderTime(seconds) {
 
     return `${hours}:${minutes}:${seconds}`
 }
+function getJobIds() {
+    return Object.keys(secondsWorked);
+}
 function render() {
     const jobsTbody = $("#jobs");
     jobsTbody.empty();
 
-    const jobIds = Object.keys(secondsWorked);
+    const jobIds = getJobIds();
     for (const jobId of jobIds) {
         const newRow = $("<tr>");
 
@@ -79,16 +106,8 @@ function render() {
         const deleteButton = $("<button>").appendTo(buttonsTd);
         deleteButton.html("Delete");
         deleteButton.click(()=>{
-            const confirmed = confirm(`Are you sure you want to delete ${jobId}?`);
-            if (confirmed) {
-                delete secondsWorked[jobId];
-                if (activeJobId === jobId) {
-                    activeJobId = "";
-                }
-                save();
-                render();
-            }
-        })
+            deleteTimer(jobId);
+        });
         const renameButton = $("<button>").appendTo(buttonsTd);
         renameButton.html("Rename");
         renameButton.click(()=>{
